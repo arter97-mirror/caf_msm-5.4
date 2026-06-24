@@ -18,7 +18,6 @@
 #include <linux/netdevice.h>
 #include <linux/clk.h>
 #include <linux/platform_device.h>
-#include <linux/wakelock.h>
 
 #include "emac_phy.h"
 
@@ -738,9 +737,9 @@ struct emac_adapter {
 	struct pinctrl_state	*mdio_pins_sleep;
 	struct pinctrl_state	*ephy_pins_active;
 	struct pinctrl_state	*ephy_pins_sleep;
+	struct pinctrl_state	*ephy_enable_pins;
 	int	(*gpio_on)(struct emac_adapter *adpt, bool mdio, bool ephy);
 	int	(*gpio_off)(struct emac_adapter *adpt, bool mdio, bool ephy);
-	struct wakeup_source link_wlock;
 
 	u32       bus_cl_hdl;
 	struct msm_bus_scale_pdata *bus_scale_table;

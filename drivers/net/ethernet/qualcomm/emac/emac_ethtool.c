@@ -359,8 +359,6 @@ static int emac_set_wol(struct net_device *netdev, struct ethtool_wolinfo *wol)
 	if (wol->wolopts & WAKE_MAGIC) {
 		adpt->wol |= EMAC_WOL_MAGIC;
 		emac_wol_gpio_irq(adpt, true);
-		/* Release wakelock */
-		__pm_relax(&adpt->link_wlock);
 	}
 
 	if (wol->wolopts & WAKE_PHY)
