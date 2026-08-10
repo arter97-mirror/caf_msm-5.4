@@ -205,6 +205,7 @@ static int bam_mux_initialized;
 
 static int polling_mode;
 static unsigned long rx_timer_interval;
+static int bam_rx_disconnect_pending;
 
 static LIST_HEAD(bam_rx_pool);
 static DEFINE_MUTEX(bam_rx_pool_mutexlock);
@@ -1383,6 +1384,11 @@ static void rx_timer_work_func(struct work_struct *work)
 				return;
 			}
 
+			if (READ_ONCE(bam_rx_disconnect_pending)) {
+				BAM_DMUX_LOG("%s: break polling loop, disconnect pending\n",
+					     __func__);
+				break;
+			}
 			ret = bam_ops->sps_get_iovec_ptr(bam_rx_pipe, &iov);
 			if (ret) {
 				DMUX_LOG_KERR("%s: sps_get_iovec failed %d\n",
@@ -1425,8 +1431,11 @@ static void rx_timer_work_func(struct work_struct *work)
 			handle_bam_mux_cmd(&info->work);
 		}
 
-		if (inactive_cycles >= POLLING_INACTIVITY) {
-			BAM_DMUX_LOG("%s: polling exit, no data\n", __func__);
+		if (inactive_cycles >= POLLING_INACTIVITY ||
+				READ_ONCE(bam_rx_disconnect_pending)) {
+			BAM_DMUX_LOG("%s: polling exit, inactive_cycles %d "
+				     "bam_rx_disconnect_pending %d \n", __func__,
+				      inactive_cycles, bam_rx_disconnect_pending);
 			rx_switch_to_interrupt_mode();
 			break;
 		}
@@ -2050,6 +2059,7 @@ static void disconnect_to_bam(void)
 	unsigned long time_remaining;
 
 	if (!in_global_reset) {
+		WRITE_ONCE(bam_rx_disconnect_pending, 1);
 		time_remaining = wait_for_completion_timeout(
 				&shutdown_completion,
 				msecs_to_jiffies(SHUTDOWN_TIMEOUT_MS));
@@ -2062,7 +2072,7 @@ static void disconnect_to_bam(void)
 	}
 
 	bam_connection_is_active = 0;
-
+	WRITE_ONCE(bam_rx_disconnect_pending, 0);
 	/* handle disconnect during active UL */
 	write_lock_irqsave(&ul_wakeup_lock, flags);
 	if (bam_is_connected) {
