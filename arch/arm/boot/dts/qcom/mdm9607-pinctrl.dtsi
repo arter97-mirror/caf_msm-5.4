@@ -966,6 +966,23 @@
 					output-low;
 				};
 			};
+
+			emac0_ephy_enable: emac0_ephy_enable {
+				/* GPIO30 input; idles high per schematic,
+				 * pulled low by the PHY on an interrupt event.
+				 */
+				mux {
+					pins = "gpio30";
+					function = "gpio";
+				};
+
+				config {
+					pins = "gpio30";
+					drive-strength = <2>; /* 2 MA */
+					bias-pull-up;
+					input-enable;
+				};
+			};
 		};
 
 		mdss_cs_active: mdss_cs_active {
