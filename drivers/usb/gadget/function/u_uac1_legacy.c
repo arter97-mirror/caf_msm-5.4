@@ -125,8 +125,7 @@ static int playback_default_hw_params(struct gaudio_snd_dev *snd)
 
 	result = snd_pcm_kernel_ioctl(substream, SNDRV_PCM_IOCTL_PREPARE, NULL);
 	if (result < 0) {
-		ERROR(snd->card,
-			"Preparing sound card failed: %d\n", (int)result);
+		pr_err("Preparing sound card failed: %d\n", (int)result);
 		kfree(params);
 		return result;
 	}
@@ -139,8 +138,7 @@ static int playback_default_hw_params(struct gaudio_snd_dev *snd)
 
 	kfree(params);
 
-	INFO(snd->card,
-		"Hardware params: access %x, format %x, channels %d, rate %d\n",
+	pr_info("Hardware params: access %x, format %x, channels %d, rate %d\n",
 		snd->access, snd->format, snd->channels, snd->rate);
 
 	return 0;
