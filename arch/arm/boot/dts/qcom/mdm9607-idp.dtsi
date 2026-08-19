@@ -71,6 +71,9 @@
 
 &emac0 {
 	status = "ok";
+	pinctrl-names = "emac_mdio_active", "emac_mdio_sleep",
+		"emac_ephy_active", "emac_ephy_sleep", "emac_ephy_enable";
+	pinctrl-4 = <&emac0_ephy_enable>;
 };
 
 /* MPP pin 2 configs for SMB358 interrupt line */
