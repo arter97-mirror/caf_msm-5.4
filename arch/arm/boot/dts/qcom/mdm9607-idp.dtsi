@@ -31,6 +31,11 @@
 		ntn-phy-id = <7>;
 		ntn-timestamp-valid-window = <4>; /* Each unit is 16.75ms */
 		ntn-timestamp-valid-window-disable = <1>; /* 1: To Disable */
+		/* GPIO30 is shared with emac0's WOL IRQ; ntn_hsic claiming it
+		 * first at probe blocks EMAC from using the pin, breaking
+		 * EMAC probe on both cold and warm boot.
+		 */
+		status = "disabled";
 	};
 
 };
