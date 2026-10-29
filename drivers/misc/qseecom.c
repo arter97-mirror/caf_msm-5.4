@@ -3,7 +3,7 @@
  *Qualcomm Secure Execution Environment Communicator (QSEECOM) driver
  *
  * Copyright (c) 2012-2018, The Linux Foundation. All rights reserved.
- * Copyright (c) 2024 Qualcomm Innovation Center, Inc. All rights reserved.
+ * Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
  */
 
 #define pr_fmt(fmt) "QSEECOM: %s: " fmt, __func__
@@ -3616,6 +3616,8 @@ static int __qseecom_update_cmd_buf_64(void *msg, bool cleanup,
 					data->client.sec_buf_fd[i].size,
 					data->client.sec_buf_fd[i].vbase,
 					data->client.sec_buf_fd[i].pbase);
+				memset(&data->client.sec_buf_fd[i], 0,
+					sizeof(struct qseecom_sec_buf_fd_info));
 			} else {
 				ret = __qseecom_allocate_sg_list_buffer(data,
 						field, i, sg_ptr);
@@ -3626,7 +3628,7 @@ static int __qseecom_update_cmd_buf_64(void *msg, bool cleanup,
 			}
 			len = QSEECOM_SG_LIST_BUF_HDR_SZ_64BIT;
 			sg = sg_ptr->sgl;
-			goto cleanup;
+			goto out;
 		}
 		sg = sg_ptr->sgl;
 		if (sg_ptr->nents == 1) {
@@ -3659,7 +3661,7 @@ static int __qseecom_update_cmd_buf_64(void *msg, bool cleanup,
 				sg = sg_next(sg);
 			}
 		}
-cleanup:
+out:
 		if (cleanup) {
 			ret = msm_ion_do_cache_op(qseecom.ion_clnt,
 					ihandle, NULL, len,
@@ -3711,6 +3713,8 @@ err:
 				data->client.sec_buf_fd[i].size,
 				data->client.sec_buf_fd[i].vbase,
 				data->client.sec_buf_fd[i].pbase);
+		memset(&data->client.sec_buf_fd[i], 0,
+			sizeof(struct qseecom_sec_buf_fd_info));
 	if (!IS_ERR_OR_NULL(ihandle))
 		ion_free(qseecom.ion_clnt, ihandle);
 	return -ENOMEM;
@@ -4835,6 +4839,7 @@ static int __qseecom_send_modfd_resp(struct qseecom_dev_handle *data,
 {
 	struct qseecom_send_modfd_listener_resp resp;
 	struct qseecom_registered_listener_list *this_lstnr = NULL;
+	int ret = 0;
 
 	if (copy_from_user(&resp, argp, sizeof(resp))) {
 		pr_err("copy_from_user failed");
@@ -4852,9 +4857,13 @@ static int __qseecom_send_modfd_resp(struct qseecom_dev_handle *data,
 		(uintptr_t)(resp.resp_buf_ptr - this_lstnr->user_virt_sb_base);
 
 	if (!is_64bit_addr)
-		__qseecom_update_cmd_buf(&resp, false, data);
+		ret = __qseecom_update_cmd_buf(&resp, false, data);
 	else
-		__qseecom_update_cmd_buf_64(&resp, false, data);
+		ret = __qseecom_update_cmd_buf_64(&resp, false, data);
+	if (ret) {
+		pr_err("Failed to update cmd buf, ret %d\n", ret);
+		return ret;
+	}
 	qseecom.send_resp_flag = 1;
 	this_lstnr->send_resp_flag = 1;
 	wake_up_interruptible(&qseecom.send_resp_wq);
