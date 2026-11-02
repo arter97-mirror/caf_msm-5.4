@@ -724,6 +724,9 @@ int usb_gadget_disconnect(struct usb_gadget *gadget)
 		goto out;
 	}
 
+	if (!gadget->connected)
+		goto out;
+
 	ret = gadget->ops->pullup(gadget, 0);
 	if (!ret) {
 		gadget->connected = 0;

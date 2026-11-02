@@ -1552,8 +1552,6 @@ static int ci_udc_vbus_session(struct usb_gadget *_gadget, int is_active)
 			usb_udc_vbus_handler(_gadget, true);
 		} else {
 			usb_udc_vbus_handler(_gadget, false);
-			if (ci->driver)
-				ci->driver->disconnect(&ci->gadget);
 			hw_device_state(ci, 0);
 			if (ci->platdata->notify_event)
 				ci->platdata->notify_event(ci,
